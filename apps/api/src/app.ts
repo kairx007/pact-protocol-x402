@@ -16,6 +16,10 @@ import {
   requestId,
   requireSession,
 } from "./auth.js";
+import {
+  confirmTreasuryCreation,
+  confirmTreasuryTransaction,
+} from "./treasury-services.js";
 import { config } from "./config.js";
 import {
   createOrganization,
@@ -28,6 +32,16 @@ import {
   rotateAgentSigner,
   verifyAgentIdentity,
 } from "./services.js";
+import {
+  createTreasury,
+  depositIntent,
+  getTreasury,
+  pauseTreasury,
+  treasuryBalance,
+  treasuryTransactionsPage,
+  unpauseTreasury,
+  withdrawTreasury,
+} from "./treasury-services.js";
 
 export const app: Express = express();
 app.disable("x-powered-by");
@@ -109,6 +123,29 @@ app.get(
 );
 
 app.post(
+  "/v1/treasuries/:treasuryId/confirm-creation",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await confirmTreasuryCreation(
+          authContext(res),
+          String(req.params.treasuryId),
+          req.body,
+        ),
+        "Treasury deployment confirmed",
+        201,
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
   "/v1/organizations/:orgId/wallet",
   requireSession,
   requireOwner,
@@ -124,6 +161,179 @@ app.post(
           req.body,
         ),
         "Organization wallet verified and linked",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/treasuries",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await createTreasury(authContext(res), req.body),
+        "Treasury created",
+        201,
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.get(
+  "/v1/treasuries/:treasuryId",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await getTreasury(authContext(res), String(req.params.treasuryId)),
+        "Treasury retrieved",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/treasuries/:treasuryId/deposit-intent",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await depositIntent(
+          authContext(res),
+          String(req.params.treasuryId),
+          req.body,
+        ),
+        "Deposit transaction prepared",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/treasuries/:treasuryId/withdraw",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await withdrawTreasury(
+          authContext(res),
+          String(req.params.treasuryId),
+          req.body,
+        ),
+        "Withdrawal confirmed",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.get(
+  "/v1/treasuries/:treasuryId/balance",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await treasuryBalance(authContext(res), String(req.params.treasuryId)),
+        "Treasury balance retrieved",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.get(
+  "/v1/treasuries/:treasuryId/transactions",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await treasuryTransactionsPage(
+          authContext(res),
+          String(req.params.treasuryId),
+        ),
+        "Treasury transactions retrieved",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/treasuries/:treasuryId/confirm-transaction",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await confirmTreasuryTransaction(
+          authContext(res),
+          String(req.params.treasuryId),
+          req.body,
+        ),
+        "Treasury transaction confirmed and indexed",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/treasuries/:treasuryId/pause",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await pauseTreasury(authContext(res), String(req.params.treasuryId)),
+        "Treasury paused",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/treasuries/:treasuryId/unpause",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await unpauseTreasury(authContext(res), String(req.params.treasuryId)),
+        "Treasury unpaused",
       );
     } catch (error) {
       return next(error);

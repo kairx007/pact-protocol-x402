@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+packages/contracts/out/
+packages/contracts/cache/
 .env
 .env.*
 !.env.example

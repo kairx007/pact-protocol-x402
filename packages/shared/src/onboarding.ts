@@ -51,6 +51,36 @@ export const rotateAgentSignerSchema = z.object({
   message: z.string().min(1).max(512),
 });
 
+export const createTreasurySchema = z.object({
+  organizationId: z.string().min(1),
+  chainId: z.number().int().positive(),
+  tokenAddress: evmAddress,
+});
+
+export const depositIntentSchema = z.object({
+  amount: z
+    .string()
+    .regex(/^[1-9]\d*$/, "Amount must be positive integer base units"),
+});
+
+export const withdrawTreasurySchema = z.object({
+  amount: z
+    .string()
+    .regex(/^[1-9]\d*$/, "Amount must be positive integer base units"),
+  recipient: evmAddress,
+  nonce: z.string().min(1).max(128),
+  deadline: z.number().int().positive(),
+  signature: z.string().regex(/^0x[0-9a-fA-F]+$/),
+});
+
+export const treasuryIdParamsSchema = z.object({
+  treasuryId: z.string().min(1),
+});
+
+export const confirmTreasuryTransactionSchema = z.object({
+  transactionHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+});
+
 export type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
 export type LinkWalletInput = z.infer<typeof linkWalletSchema>;
 export type RegisterAgentInput = z.infer<typeof registerAgentSchema>;
