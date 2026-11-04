@@ -12,4 +12,8 @@ This monorepo is the foundation for PACT's Monad contracts, Express and TypeScri
 
 See [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [API specification](docs/api-spec.yaml) for Phase 1 shared decisions.
 
+## Solidity contracts
+
+Install Foundry, then run `cd packages/contracts && forge fmt --check && forge build && forge test -vvv`. Contract tests use local ERC-20 and ERC-8004 mocks; they do not require RPC credentials or deployed contracts.
+
 Protect `main` with required CI checks and reviewed pull requests. Store secrets only in local environment files (ignored by Git) or a managed secret store.

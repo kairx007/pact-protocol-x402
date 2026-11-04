@@ -138,3 +138,45 @@ export interface RegisteredAgentRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+export type TreasuryStatus = "PENDING" | "ACTIVE" | "PAUSED";
+
+export interface TreasuryRecord {
+  id: string;
+  treasuryId: string;
+  organizationId: string;
+  chainId: number;
+  contractAddress: string;
+  ownerAddress: string;
+  tokenAddress: string;
+  tokenSymbol: string;
+  tokenDecimals: number;
+  status: TreasuryStatus;
+  cachedBalance: string;
+  lastSyncedBlock: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TreasuryTransactionRecord {
+  id: string;
+  treasuryId: string;
+  organizationId: string;
+  chainId: number;
+  transactionHash: string;
+  blockNumber: number;
+  logIndex: number;
+  type:
+    | "TREASURY_CREATED"
+    | "DEPOSIT"
+    | "WITHDRAWAL"
+    | "PAUSE"
+    | "UNPAUSE"
+    | "RESERVATION"
+    | "SETTLEMENT"
+    | "RELEASE";
+  amount?: string;
+  from?: string;
+  to?: string;
+  createdAt: string;
+}

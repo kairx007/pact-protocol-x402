@@ -1,5 +1,10 @@
 import { MongoClient, type Collection, type Db } from "mongodb";
-import type { OrganizationRecord, RegisteredAgentRecord } from "@pact/shared";
+import type {
+  OrganizationRecord,
+  RegisteredAgentRecord,
+  TreasuryRecord,
+  TreasuryTransactionRecord,
+} from "@pact/shared";
 import { config } from "./config.js";
 
 const client = new MongoClient(config.MONGODB_URI);
@@ -24,6 +29,21 @@ export async function connectDatabase(): Promise<Db> {
         },
         { unique: true },
       ),
+      db
+        .collection("treasuries")
+        .createIndex({ treasuryId: 1 }, { unique: true }),
+      db
+        .collection("treasuries")
+        .createIndex({ organizationId: 1, chainId: 1 }, { unique: true }),
+      db
+        .collection("treasuryTransactions")
+        .createIndex(
+          { treasuryId: 1, transactionHash: 1, logIndex: 1 },
+          { unique: true },
+        ),
+      db
+        .collection("treasuryTransactions")
+        .createIndex({ treasuryId: 1, blockNumber: -1, logIndex: -1 }),
     ]);
   }
   return db;
@@ -32,10 +52,16 @@ export async function connectDatabase(): Promise<Db> {
 export async function collections(): Promise<{
   organizations: Collection<OrganizationRecord>;
   agents: Collection<RegisteredAgentRecord>;
+  treasuries: Collection<TreasuryRecord>;
+  treasuryTransactions: Collection<TreasuryTransactionRecord>;
 }> {
   const database = await connectDatabase();
   return {
     organizations: database.collection<OrganizationRecord>("organizations"),
     agents: database.collection<RegisteredAgentRecord>("agents"),
+    treasuries: database.collection<TreasuryRecord>("treasuries"),
+    treasuryTransactions: database.collection<TreasuryTransactionRecord>(
+      "treasuryTransactions",
+    ),
   };
 }
