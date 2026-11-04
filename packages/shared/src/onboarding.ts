@@ -81,6 +81,70 @@ export const confirmTreasuryTransactionSchema = z.object({
   transactionHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
 });
 
+const positiveUint128 = z.string().regex(/^[1-9]\d*$/).refine(
+  (value) => /^[1-9]\d*$/.test(value) && BigInt(value) <= (1n << 128n) - 1n,
+  "Amount exceeds uint128",
+);
+
+const amountIsAtMost = (amount: string, maximum: string) =>
+  /^[1-9]\d*$/.test(amount) &&
+  /^[1-9]\d*$/.test(maximum) &&
+  BigInt(amount) <= BigInt(maximum);
+
+export const createCapabilitySchema = z.object({
+  organizationId: z.string().min(1),
+  treasuryId: z.string().min(1),
+  agentId: z.string().min(1),
+  budget: positiveUint128,
+  maxPerTransaction: positiveUint128,
+  validAfter: z.number().int().positive(),
+  validUntil: z.number().int().positive(),
+  canDelegate: z.boolean().default(false),
+  allowedTokens: z.array(evmAddress).min(1).max(32),
+  allowedRecipients: z.array(evmAddress).max(32).default([]),
+  allowedServices: z
+    .array(z.string().regex(/^0x[0-9a-fA-F]{64}$/))
+    .max(32)
+    .default([]),
+  policyHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+}).refine((value) => amountIsAtMost(value.maxPerTransaction, value.budget), {
+  path: ["maxPerTransaction"],
+  message: "Per-transaction limit cannot exceed the budget",
+}).refine((value) => value.validUntil > value.validAfter, {
+  path: ["validUntil"],
+  message: "Expiry must be after the start time",
+});
+
+export const delegateCapabilitySchema = z.object({
+  organizationId: z.string().min(1),
+  childAgentId: z.string().min(1),
+  childBudget: positiveUint128,
+  childMaxPerTransaction: positiveUint128,
+  childExpiry: z.number().int().positive(),
+  allowedTokens: z.array(evmAddress).min(1).max(32),
+  allowedRecipients: z.array(evmAddress).max(32).default([]),
+  allowedServices: z
+    .array(z.string().regex(/^0x[0-9a-fA-F]{64}$/))
+    .max(32)
+    .default([]),
+  policyHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+}).refine((value) => amountIsAtMost(value.childMaxPerTransaction, value.childBudget), {
+  path: ["childMaxPerTransaction"],
+  message: "Per-transaction limit cannot exceed the child budget",
+});
+
+export const updateCapabilitySchema = z.object({
+  organizationId: z.string().min(1),
+  maxPerTransaction: positiveUint128,
+  validUntil: z.number().int().positive(),
+  policyHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+});
+
+export const confirmCapabilitySchema = z.object({
+  draftId: z.string().min(1),
+  transactionHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+});
+
 export type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
 export type LinkWalletInput = z.infer<typeof linkWalletSchema>;
 export type RegisterAgentInput = z.infer<typeof registerAgentSchema>;

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  createCapabilitySchema,
   createTreasurySchema,
+  delegateCapabilitySchema,
   depositIntentSchema,
   withdrawTreasurySchema,
 } from "./onboarding.js";
@@ -40,5 +42,48 @@ describe("treasury request schemas", () => {
     expect(
       createTreasurySchema.safeParse({ ...valid, chainId: 0 }).success,
     ).toBe(false);
+  });
+});
+
+describe("capability request schemas", () => {
+  const base = {
+    organizationId: "org-1",
+    treasuryId: "treasury-1",
+    agentId: "agent-1",
+    budget: "1000000",
+    maxPerTransaction: "100000",
+    validAfter: 1_800_000_000,
+    validUntil: 1_900_000_000,
+    allowedTokens: ["0x0000000000000000000000000000000000000001"],
+    policyHash: `0x${"11".repeat(32)}`,
+  };
+
+  it("accepts bounded root capabilities and defaults delegation off", () => {
+    const parsed = createCapabilitySchema.parse(base);
+    expect(parsed.canDelegate).toBe(false);
+    expect(parsed.maxPerTransaction).toBe("100000");
+  });
+
+  it("rejects per-transaction authority greater than the budget", () => {
+    expect(
+      createCapabilitySchema.safeParse({
+        ...base,
+        maxPerTransaction: "2000000",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("validates delegated capability fields", () => {
+    expect(
+      delegateCapabilitySchema.safeParse({
+        organizationId: "org-1",
+        childAgentId: "agent-child",
+        childBudget: "1000",
+        childMaxPerTransaction: "200",
+        childExpiry: 1_900_000_000,
+        allowedTokens: base.allowedTokens,
+        policyHash: base.policyHash,
+      }).success,
+    ).toBe(true);
   });
 });

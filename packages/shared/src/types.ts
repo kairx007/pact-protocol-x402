@@ -180,3 +180,31 @@ export interface TreasuryTransactionRecord {
   to?: string;
   createdAt: string;
 }
+
+export type CapabilityStatus = "PENDING" | "ACTIVE" | "REVOKED" | "EXPIRED";
+
+export interface CapabilityRecord {
+  id: string;
+  capabilityId: string;
+  organizationId: string;
+  treasuryId: string;
+  agentId: string;
+  agentKey: string;
+  parentCapabilityId?: string;
+  budget: string;
+  maxPerTransaction: string;
+  policyHash: string;
+  allowedTokens: string[];
+  allowedRecipients: string[];
+  allowedServices: string[];
+  validAfter: string;
+  validUntil: string;
+  canDelegate: boolean;
+  depth: number;
+  status: CapabilityStatus;
+  chainId: number;
+  contractAddress: string;
+  transactionHash?: string;
+  createdAt: string;
+  updatedAt: string;
+}
