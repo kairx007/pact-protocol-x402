@@ -5,4 +5,6 @@ coverage/
 .env.*
 !.env.example
 .turbo/
+**/.next/
+**/*.tsbuildinfo
 .DS_Store

@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #f7f8fa;
+  --color-foreground: #202431;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-muted: #687181;
+  --color-subtle: #929aa7;
+  --color-brand: #200052;
+  --color-brand-hover: #321166;
+  --color-brand-soft: #f2eff7;
+  --color-success: #26734d;
+  --color-success-soft: #edf6f0;
+  --color-warning: #95600f;
+  --color-warning-soft: #fff6e6;
+  --color-danger: #a33d49;
+  --color-danger-soft: #fff0f1;
+  --font-sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-background font-sans text-foreground antialiased;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button {
+    @apply text-inherit;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  ::selection {
+    @apply bg-brand-soft;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand/40 ring-offset-2;
+  }
+}
