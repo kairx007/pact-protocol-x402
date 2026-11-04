@@ -1,15 +1,15 @@
-# Monad Blitz Devcon Mumbai Submission Process
+# PACT
 
-## Steps to prepare your project repo:
+Programmable financial authority for autonomous agents.
 
-1. Visit the `monad-blitz-devcon-mumbai` repo (link [here](https://github.com/monad-developers/monad-blitz-devcon-mumbai)) and fork it.
+This monorepo is the foundation for PACT's Monad contracts, Express and TypeScript API, Next.js dashboard, MongoDB records, TypeScript SDK, and MCP integration.
 
-![1.png](./screenshots/1.png)
+## Development
 
-2. Give it your project name, a one-liner description, make sure you are forking `main` branch and click `Create Fork`
+- Node.js 22 and pnpm 10.20.0
+- Install dependencies: `pnpm install`
+- Quality checks: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`
 
-![2.png](https://github.com/monad-developers/monad-blitz-denver/raw/main/screenshots/2.png?raw=true)
+See [architecture](docs/architecture.md), [threat model](docs/threat-model.md), and [API specification](docs/api-spec.yaml) for Phase 1 shared decisions.
 
-3. In your fork you can make all the changes you want, add code of your project, create branches, add information to `README.md` , you can change anything and everything.
-
-4. For next steps head to [Blitz Portal](https://blitz.devnads.com)
+Protect `main` with required CI checks and reviewed pull requests. Store secrets only in local environment files (ignored by Git) or a managed secret store.

@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: PACT API
+  version: 0.1.0
+  description: Initial shared API conventions for the PACT platform.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check API availability
+      responses:
+        "200":
+          description: API is available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+components:
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, message, data, meta]
+      properties:
+        success: { const: true }
+        message: { type: string }
+        data: { type: object, additionalProperties: true }
+        meta:
+          type: object
+          required: [requestId]
+          properties:
+            requestId: { type: string }
+    ErrorEnvelope:
+      type: object
+      required: [success, message, error, meta]
+      properties:
+        success: { const: false }
+        message: { type: string }
+        error:
+          type: object
+          required: [code, details]
+          properties:
+            code: { type: string }
+            details: { type: object, additionalProperties: true }
+        meta:
+          type: object
+          required: [requestId]
+          properties:
+            requestId: { type: string }
+    TokenAmount:
+      type: object
+      required: [amount, tokenDecimals]
+      properties:
+        amount:
+          type: string
+          pattern: "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+          example: "15.25"
+        tokenDecimals:
+          type: integer
+          minimum: 0
+          maximum: 255
