@@ -100,3 +100,41 @@ export interface Approval {
   approvedAt: string;
   signature?: string;
 }
+
+export type OrganizationStatus = "ACTIVE" | "SUSPENDED";
+export type OrganizationWalletType = "MERA" | "EOA" | "SMART_ACCOUNT";
+export type AgentSignerType = "EOA" | "ERC1271";
+
+export interface OrganizationRecord {
+  id: string;
+  organizationId: string;
+  name: string;
+  slug: string;
+  ownerUserId: string;
+  wallet?: { address: string; type: OrganizationWalletType };
+  status: OrganizationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RegisteredAgentRecord {
+  id: string;
+  agentId: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  identity: {
+    standard: "ERC8004";
+    registryAddress: string;
+    agentId: string;
+    chainId: number;
+    registrationURI?: string;
+    verifiedAt?: string;
+    verifiedOwner?: string;
+    verifiedWallet?: string;
+  };
+  signer: { address: string; type: AgentSignerType };
+  status: AgentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
