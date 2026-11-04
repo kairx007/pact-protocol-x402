@@ -38,7 +38,7 @@ contract PACTTreasuryTest {
         token = new MockERC20();
         identity = new MockIdentityAuthorization();
         identity.setAgent(agentKey, address(0xA6E), true);
-        treasury = new PACTTreasury(organizationId, owner, address(token), address(identity), withdrawer);
+        treasury = new PACTTreasury(organizationId, owner, address(token), address(identity), address(identity), withdrawer);
         token.mint(owner, 1_000_000);
         vm.prank(owner);
         token.approve(address(treasury), type(uint256).max);
@@ -136,7 +136,7 @@ contract PACTTreasuryTest {
 
     function testFactoryCreatesOneTreasuryPerOrganization() public {
         identity.setOwner(organizationId, owner);
-        PACTTreasuryFactory factory = new PACTTreasuryFactory(address(identity), withdrawer, address(token));
+        PACTTreasuryFactory factory = new PACTTreasuryFactory(address(identity), address(identity), withdrawer, address(token));
         vm.prank(owner);
         address created = factory.createTreasury(organizationId, owner);
         require(created == factory.treasuryOf(organizationId), "factory mapping wrong");
@@ -147,7 +147,7 @@ contract PACTTreasuryTest {
 
     function testFactoryCannotAssignTreasuryToDifferentOwner() public {
         identity.setOwner(organizationId, owner);
-        PACTTreasuryFactory factory = new PACTTreasuryFactory(address(identity), withdrawer, address(token));
+        PACTTreasuryFactory factory = new PACTTreasuryFactory(address(identity), address(identity), withdrawer, address(token));
         vm.expectRevert(abi.encodeWithSelector(PACTTreasuryFactory.InvalidAddress.selector));
         vm.prank(owner);
         factory.createTreasury(organizationId, recipient);

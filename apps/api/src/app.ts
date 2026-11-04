@@ -42,6 +42,17 @@ import {
   unpauseTreasury,
   withdrawTreasury,
 } from "./treasury-services.js";
+import {
+  capabilityBudget,
+  capabilityChildren,
+  confirmCapability,
+  createCapability,
+  delegateCapability,
+  getCapability,
+  listAgentCapabilities,
+  revokeCapability,
+  updateCapability,
+} from "./capability-services.js";
 
 export const app: Express = express();
 app.disable("x-powered-by");
@@ -334,6 +345,177 @@ app.post(
         res,
         await unpauseTreasury(authContext(res), String(req.params.treasuryId)),
         "Treasury unpaused",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/capabilities",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await createCapability(authContext(res), req.body),
+        "Capability transaction prepared",
+        201,
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/capabilities/confirm",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await confirmCapability(authContext(res), req.body),
+        "Capability creation confirmed",
+        201,
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.get("/v1/capabilities/:id", requireSession, async (req, res, next) => {
+  try {
+    return success(
+      req,
+      res,
+      await getCapability(authContext(res), String(req.params.id)),
+      "Capability retrieved",
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get(
+  "/v1/agents/:agentId/capabilities",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await listAgentCapabilities(
+          authContext(res),
+          String(req.params.agentId),
+        ),
+        "Agent capabilities retrieved",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/capabilities/:id/delegate",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await delegateCapability(
+          authContext(res),
+          String(req.params.id),
+          req.body,
+        ),
+        "Delegation transaction prepared",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.patch(
+  "/v1/capabilities/:id",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await updateCapability(
+          authContext(res),
+          String(req.params.id),
+          req.body,
+        ),
+        "Capability update transaction prepared",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.post(
+  "/v1/capabilities/:id/revoke",
+  requireSession,
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await revokeCapability(
+          authContext(res),
+          String(req.params.id),
+          String(req.body.organizationId),
+        ),
+        "Capability revocation transaction prepared",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.get(
+  "/v1/capabilities/:id/budget",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await capabilityBudget(authContext(res), String(req.params.id)),
+        "Capability budget retrieved",
+      );
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+app.get(
+  "/v1/capabilities/:id/children",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      return success(
+        req,
+        res,
+        await capabilityChildren(authContext(res), String(req.params.id)),
+        "Capability children retrieved",
       );
     } catch (error) {
       return next(error);

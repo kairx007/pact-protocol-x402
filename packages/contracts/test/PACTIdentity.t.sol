@@ -20,6 +20,7 @@ contract PACTIdentityTest {
     function setUp() public {
         identity = new PACTIdentity(owner);
         registry = new MockERC8004Registry();
+        vm.prank(owner);
         identity.setOrganizationOwner(organizationId, owner);
         registry.register(1, address(0xBEEF), signer);
     }

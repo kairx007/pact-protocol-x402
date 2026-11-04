@@ -13,6 +13,7 @@ const envSchema = z.object({
   ERC8004_REGISTRIES_JSON: z.string().default("{}"),
   APPROVED_TOKENS_JSON: z.string().default("{}"),
   TREASURY_FACTORY_ADDRESSES_JSON: z.string().default("{}"),
+  CAPABILITY_CONTRACTS_JSON: z.string().default("{}"),
   TREASURY_IDENTITY_ADDRESSES_JSON: z.string().default("{}"),
   TREASURY_RELAYER_PRIVATE_KEYS_JSON: z.string().default("{}"),
   TREASURY_WITHDRAWAL_SIGNERS_JSON: z.string().default("{}"),
@@ -41,6 +42,9 @@ export const approvedTokens = z
 export const treasuryFactoryAddresses = z
   .record(z.string(), z.string().regex(/^0x[0-9a-fA-F]{40}$/))
   .parse(JSON.parse(config.TREASURY_FACTORY_ADDRESSES_JSON));
+export const capabilityContracts = z
+  .record(z.string(), z.string().regex(/^0x[0-9a-fA-F]{40}$/))
+  .parse(JSON.parse(config.CAPABILITY_CONTRACTS_JSON));
 export const treasuryIdentityAddresses = z
   .record(z.string(), z.string().regex(/^0x[0-9a-fA-F]{40}$/))
   .parse(JSON.parse(config.TREASURY_IDENTITY_ADDRESSES_JSON));

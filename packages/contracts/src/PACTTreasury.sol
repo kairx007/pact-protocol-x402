@@ -19,6 +19,10 @@ interface IPACTOrganizationOwner {
     function isOwner(bytes32 organizationId, address account) external view returns (bool);
 }
 
+interface IPACTCapabilityBudget {
+    function committedCapabilityBudget(address treasury) external view returns (uint256);
+}
+
 library SafeERC20Treasury {
     error SafeTransferFailed();
 
@@ -51,6 +55,7 @@ contract PACTTreasury {
 
     bytes32 public immutable organizationId;
     address public immutable identity;
+    address public immutable capabilityManager;
     address public immutable withdrawalSigner;
     TreasuryState private state;
     mapping(bytes32 => uint256) public reservations;
@@ -99,10 +104,11 @@ contract PACTTreasury {
         _;
     }
 
-    constructor(bytes32 organizationId_, address owner_, address token_, address identity_, address withdrawalSigner_) {
-        if (organizationId_ == bytes32(0) || owner_ == address(0) || token_ == address(0) || identity_ == address(0) || withdrawalSigner_ == address(0)) revert InvalidAddress();
+    constructor(bytes32 organizationId_, address owner_, address token_, address identity_, address capabilityManager_, address withdrawalSigner_) {
+        if (organizationId_ == bytes32(0) || owner_ == address(0) || token_ == address(0) || identity_ == address(0) || capabilityManager_ == address(0) || withdrawalSigner_ == address(0)) revert InvalidAddress();
         organizationId = organizationId_;
         identity = identity_;
+        capabilityManager = capabilityManager_;
         withdrawalSigner = withdrawalSigner_;
         state.owner = owner_;
         state.paymentToken = token_;
@@ -141,7 +147,9 @@ contract PACTTreasury {
         bytes32 structHash = keccak256(abi.encode(WITHDRAW_TYPEHASH, organizationId, address(this), state.paymentToken, recipient, amount, nonce, deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
         if (!_validSignature(withdrawalSigner, digest, signature)) revert InvalidSignature();
-        if (amount > getAvailableBalance()) revert InsufficientAvailableBalance();
+        uint256 available = getAvailableBalance();
+        uint256 committed = IPACTCapabilityBudget(capabilityManager).committedCapabilityBudget(address(this));
+        if (committed > available || amount > available - committed) revert InsufficientAvailableBalance();
         usedWithdrawalNonce[bytes32(nonce)] = true;
         IERC20Treasury(state.paymentToken).safeTransfer(recipient, amount);
         emit Withdrawn(recipient, amount, balance());
@@ -160,7 +168,7 @@ contract PACTTreasury {
     }
 
     function reserve(bytes32 paymentId, bytes32 agentKey, address signer, uint256 amount) external onlyActive {
-        if (msg.sender != identity || !IPACTIdentityAuthorization(identity).isAgentAuthorized(agentKey, signer)) revert Unauthorized();
+        if (msg.sender != capabilityManager || !IPACTIdentityAuthorization(identity).isAgentAuthorized(agentKey, signer)) revert Unauthorized();
         if (paymentId == bytes32(0) || amount == 0 || reservations[paymentId] != 0 || settled[paymentId]) revert InvalidAmount();
         if (amount > getAvailableBalance()) revert InsufficientAvailableBalance();
         reservations[paymentId] = amount;
@@ -169,7 +177,7 @@ contract PACTTreasury {
     }
 
     function settle(bytes32 paymentId, address recipient) external nonReentrant onlyActive {
-        if (msg.sender != identity) revert Unauthorized();
+        if (msg.sender != capabilityManager) revert Unauthorized();
         uint256 amount = reservations[paymentId];
         if (amount == 0 || recipient == address(0) || settled[paymentId]) revert InvalidState();
         reservations[paymentId] = 0;
@@ -181,7 +189,7 @@ contract PACTTreasury {
     }
 
     function release(bytes32 paymentId) external {
-        if (msg.sender != identity && msg.sender != state.owner) revert Unauthorized();
+        if (msg.sender != capabilityManager) revert Unauthorized();
         uint256 amount = reservations[paymentId];
         if (amount == 0 || settled[paymentId]) revert InvalidState();
         reservations[paymentId] = 0;

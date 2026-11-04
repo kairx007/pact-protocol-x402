@@ -2,6 +2,7 @@ import { MongoClient, type Collection, type Db } from "mongodb";
 import type {
   OrganizationRecord,
   RegisteredAgentRecord,
+  CapabilityRecord,
   TreasuryRecord,
   TreasuryTransactionRecord,
 } from "@pact/shared";
@@ -44,6 +45,15 @@ export async function connectDatabase(): Promise<Db> {
       db
         .collection("treasuryTransactions")
         .createIndex({ treasuryId: 1, blockNumber: -1, logIndex: -1 }),
+      db
+        .collection("capabilities")
+        .createIndex({ capabilityId: 1 }, { unique: true }),
+      db
+        .collection("capabilities")
+        .createIndex({ organizationId: 1, agentId: 1, status: 1 }),
+      db
+        .collection("capabilities")
+        .createIndex({ organizationId: 1, parentCapabilityId: 1 }),
     ]);
   }
   return db;
@@ -54,6 +64,7 @@ export async function collections(): Promise<{
   agents: Collection<RegisteredAgentRecord>;
   treasuries: Collection<TreasuryRecord>;
   treasuryTransactions: Collection<TreasuryTransactionRecord>;
+  capabilities: Collection<CapabilityRecord>;
 }> {
   const database = await connectDatabase();
   return {
@@ -63,5 +74,6 @@ export async function collections(): Promise<{
     treasuryTransactions: database.collection<TreasuryTransactionRecord>(
       "treasuryTransactions",
     ),
+    capabilities: database.collection<CapabilityRecord>("capabilities"),
   };
 }
