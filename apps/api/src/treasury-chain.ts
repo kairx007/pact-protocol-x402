@@ -10,6 +10,7 @@ import {
 } from "viem";
 import {
   approvedTokens,
+  capabilityContracts,
   rpcUrls,
   treasuryFactoryAddresses,
   treasuryIdentityAddresses,
@@ -46,6 +47,17 @@ const erc20Abi = parseAbi([
   "function decimals() view returns (uint8)",
   "function symbol() view returns (string)",
   "event Transfer(address indexed from,address indexed to,uint256 value)",
+]);
+const capabilityAbi = parseAbi([
+  "function createCapability(bytes32 organizationId,address treasury,bytes32 agentKey,uint128 budget,uint128 maxPerTransaction,uint64 validAfter,uint64 validUntil,bool canDelegate,address[] tokens,address[] recipients,bytes32[] services,bytes32 policyHash) returns (bytes32)",
+  "function delegateCapability(bytes32 parentId,bytes32 childAgentKey,address childSigner,uint128 childBudget,uint128 childMaxTransaction,uint64 childExpiry,address[] childTokens,address[] childRecipients,bytes32[] childServices,bytes32 childPolicyHash) returns (bytes32)",
+  "function revokeCapability(bytes32 capabilityId)",
+  "function updateCapability(bytes32 capabilityId,uint128 newMaxPerTransaction,uint64 newValidUntil,bytes32 policyHash)",
+  "function availableBudget(bytes32 capabilityId) view returns (uint128)",
+  "function isCapabilityActive(bytes32 capabilityId) view returns (bool)",
+  "function getCapability(bytes32 capabilityId) view returns ((bytes32 id,bytes32 parentId,bytes32 agentKey,address treasury,uint128 budget,uint128 spent,uint128 reserved,uint128 childAllocated,uint128 maxPerTransaction,bytes32 policyHash,uint64 validAfter,uint64 validUntil,uint8 depth,bool canDelegate,bool revoked,bool exists))",
+  "function getChildren(bytes32 capabilityId) view returns (bytes32[])",
+  "event CapabilityCreated(bytes32 indexed capabilityId,bytes32 indexed organizationId,bytes32 indexed agentKey,bytes32 parentId,address treasury,uint128 budget,bytes32 policyHash)",
 ]);
 
 function clientFor(chainId: number): PublicClient {
@@ -357,6 +369,131 @@ export async function confirmedTreasuryCreation(input: {
     address: created.args.treasury,
     blockNumber: receipt.blockNumber,
     logIndex: Number(created.logIndex),
+  };
+}
+
+export function capabilityTransaction(
+  chainId: number,
+  functionName:
+    | "createCapability"
+    | "delegateCapability"
+    | "revokeCapability"
+    | "updateCapability",
+  args: readonly unknown[],
+): { address: Address; data: `0x${string}` } {
+  const address = capabilityContracts[String(chainId)] as Address | undefined;
+  if (!address)
+    throw new Error(
+      `Capability contract is not configured for chain ${chainId}`,
+    );
+  const data = encodeFunctionData({
+    abi: capabilityAbi,
+    functionName,
+    args,
+  } as never);
+  return { address, data };
+}
+
+export async function readCapability(
+  chainId: number,
+  capabilityId: `0x${string}`,
+) {
+  const address = capabilityContracts[String(chainId)] as Address | undefined;
+  if (!address)
+    throw new Error(
+      `Capability contract is not configured for chain ${chainId}`,
+    );
+  const publicClient = clientFor(chainId);
+  const [capability, available, active] = await Promise.all([
+    publicClient.readContract({
+      address,
+      abi: capabilityAbi,
+      functionName: "getCapability",
+      args: [capabilityId],
+    }),
+    publicClient.readContract({
+      address,
+      abi: capabilityAbi,
+      functionName: "availableBudget",
+      args: [capabilityId],
+    }),
+    publicClient.readContract({
+      address,
+      abi: capabilityAbi,
+      functionName: "isCapabilityActive",
+      args: [capabilityId],
+    }),
+  ]);
+  return { capability, available, active };
+}
+
+export async function readCapabilityChildren(
+  chainId: number,
+  capabilityId: `0x${string}`,
+) {
+  const address = capabilityContracts[String(chainId)] as Address | undefined;
+  if (!address)
+    throw new Error(
+      `Capability contract is not configured for chain ${chainId}`,
+    );
+  return clientFor(chainId).readContract({
+    address,
+    abi: capabilityAbi,
+    functionName: "getChildren",
+    args: [capabilityId],
+  });
+}
+
+export async function confirmCapabilityCreation(input: {
+  chainId: number;
+  hash: `0x${string}`;
+  expectedOrg: `0x${string}`;
+  expectedAgentKey: `0x${string}`;
+  expectedParent: `0x${string}`;
+  expectedTreasury: Address;
+  expectedBudget: bigint;
+  expectedPolicyHash: `0x${string}`;
+}) {
+  const contract = capabilityContracts[String(input.chainId)] as
+    Address | undefined;
+  if (!contract)
+    throw new Error(
+      `Capability contract is not configured for chain ${input.chainId}`,
+    );
+  const receipt = await clientFor(input.chainId).waitForTransactionReceipt({
+    hash: input.hash,
+    confirmations: 1,
+  });
+  if (
+    receipt.status !== "success" ||
+    getAddress(receipt.to ?? "0x0000000000000000000000000000000000000000") !==
+      contract
+  )
+    throw new Error(
+      "Capability transaction failed or was sent to the wrong contract",
+    );
+  const events = parseEventLogs({
+    abi: capabilityAbi,
+    logs: receipt.logs,
+    eventName: "CapabilityCreated",
+  });
+  const event = events.find(
+    ({ args }) =>
+      args.organizationId === input.expectedOrg &&
+      args.agentKey === input.expectedAgentKey &&
+      args.parentId === input.expectedParent &&
+      getAddress(args.treasury) === input.expectedTreasury &&
+      args.budget === input.expectedBudget &&
+      args.policyHash === input.expectedPolicyHash,
+  );
+  if (!event)
+    throw new Error(
+      "Confirmed transaction does not contain the expected capability event",
+    );
+  return {
+    capabilityId: event.args.capabilityId,
+    contract,
+    blockNumber: receipt.blockNumber,
   };
 }
 

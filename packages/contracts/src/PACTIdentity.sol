@@ -129,6 +129,10 @@ contract PACTIdentity {
         return organizationOwner[organizationId] == account && account != address(0);
     }
 
+    function agentSigner(bytes32 agentKey) external view returns (address) {
+        return bindings[agentKey].signer;
+    }
+
     function getAgentBinding(bytes32 agentKey) external view returns (AgentBinding memory) {
         return bindings[agentKey];
     }
